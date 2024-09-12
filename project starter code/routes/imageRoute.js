@@ -1,6 +1,7 @@
 import express from "express";
 import isUrl from 'is-url';
 import {filterImageFromURL, deleteLocalFiles} from '../util/util.js';
+import imageService from "../service/imageService.js";
 
 export const router = express.Router();
 
@@ -18,30 +19,8 @@ router.get( "/filteredimage", async ( req, res ) => {
     }
 
     try {
-        // 2. call filterImageFromURL(image_url) to filter the image
-        const imageFilteredPath = await filterImageFromURL(image_url);
-        console.log('imageFilteredPath=============:' + imageFilteredPath);
-
-        await new Promise((resolve, reject) => {
-            // 3. send the resulting file in the response
-            res.sendFile(imageFilteredPath, async (err) => {
-                if (err) {
-                    reject(new Error("Error sending file."));
-                }
-    
-                // 4. Deletes any files on the server on finish of the response
-                try {
-                    const localImagePath = process.env.ROOT_DIR + imageFilteredPath;
-                    await deleteLocalFiles([localImagePath]);
-                    resolve();
-                } catch (err) {
-                    reject(new Error("Error deleting local files."));
-                }
-            });
-        });
-
+        await imageService.processImage(res, image_url);
         return res.status(200);
-        
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }
